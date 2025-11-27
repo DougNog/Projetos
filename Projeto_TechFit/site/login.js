@@ -709,9 +709,9 @@ async function adminInit(){
 async function renderAlunos(){
     try {
         const alunos = await apiCall('admin.php?action=alunos');
-        const tbody = $('#tbl-alunos tbody'); 
+        const tbody = $('#tbl-alunos tbody');
         tbody.innerHTML = '';
-        
+
         alunos.forEach(u => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -725,35 +725,95 @@ async function renderAlunos(){
                 </td>`;
             tbody.appendChild(tr);
         });
-        
+
         tbody.onclick = (e) => {
-            const id = e.target.dataset.edit || e.target.dataset.del; 
+            const id = e.target.dataset.edit || e.target.dataset.del;
             if(!id) return;
-            
+
             if(e.target.dataset.edit) editAluno(id);
-            if(e.target.dataset.del){ 
-                if(confirm('Excluir aluno?')){ 
-                    delAluno(id); 
-                } 
+            if(e.target.dataset.del){
+                if(confirm('Tem certeza que deseja excluir este aluno?')){
+                    delAluno(id);
+                }
             }
         };
-        
+
     } catch(error) {
         console.error('Error loading students:', error);
         $('#tbl-alunos tbody').innerHTML = '<tr><td colspan="5" class="muted">Erro ao carregar alunos.</td></tr>';
     }
 }
 
-function editAluno(id = null){
-    // Implementação básica - em produção, criar API para CRUD completo
-    const nome = prompt('Nome do aluno:', id ? 'Carregando...' : '');
-    if(nome === null) return;
-    toast('Funcionalidade em desenvolvimento - use o PHPMyAdmin', 'warn');
+async function editAluno(id = null){
+    try {
+        let aluno = null;
+        if (id) {
+            // Buscar dados do aluno para editar
+            const alunos = await apiCall('admin.php?action=alunos');
+            aluno = alunos.find(a => a.id == id);
+            if (!aluno) {
+                toast('Aluno não encontrado', 'err');
+                return;
+            }
+        }
+
+        // Formulário simples para editar aluno
+        const nome = prompt('Nome do aluno:', aluno ? aluno.nome : '');
+        if (nome === null) return;
+
+        const email = prompt('Email do aluno:', aluno ? aluno.email : '');
+        if (email === null) return;
+
+        const modalidade = prompt('Modalidade (opcional):', aluno ? aluno.modalidade : '');
+
+        if (aluno) {
+            // Atualizar aluno existente
+            await apiCall('admin.php?action=alunos', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    id: id,
+                    nome: nome.trim(),
+                    email: email.trim().toLowerCase(),
+                    modalidade: modalidade ? modalidade.trim() : null
+                })
+            });
+            toast('Aluno atualizado com sucesso!', 'ok');
+        } else {
+            // Criar novo aluno
+            const senha = prompt('Senha do aluno:');
+            if (senha === null) return;
+
+            await apiCall('admin.php?action=alunos', {
+                method: 'POST',
+                body: JSON.stringify({
+                    nome: nome.trim(),
+                    email: email.trim().toLowerCase(),
+                    senha: senha,
+                    modalidade: modalidade ? modalidade.trim() : null
+                })
+            });
+            toast('Aluno criado com sucesso!', 'ok');
+        }
+
+        // Recarregar lista
+        await renderAlunos();
+
+    } catch (error) {
+        console.error('Error editing student:', error);
+        toast('Erro ao salvar aluno', 'err');
+    }
 }
 
-function delAluno(id){
-    if(confirm('Tem certeza que deseja excluir este aluno?')) {
-        toast('Funcionalidade em desenvolvimento - use o PHPMyAdmin', 'warn');
+async function delAluno(id){
+    try {
+        await apiCall(`admin.php?action=alunos&id=${id}`, {
+            method: 'DELETE'
+        });
+        toast('Aluno excluído com sucesso!', 'ok');
+        await renderAlunos();
+    } catch (error) {
+        console.error('Error deleting student:', error);
+        toast('Erro ao excluir aluno', 'err');
     }
 }
 
@@ -771,10 +831,10 @@ async function renderModalidades(){
         });
         
         list.onclick = (e) => {
-            const id = e.target.dataset.del; 
+            const id = e.target.dataset.del;
             if(!id) return;
             if(confirm('Excluir modalidade?')) {
-                toast('Funcionalidade em desenvolvimento - use o PHPMyAdmin', 'warn');
+                delModalidade(id);
             }
         };
         
@@ -784,10 +844,37 @@ async function renderModalidades(){
     }
 }
 
-function addModalidade(){
-    const m = prompt('Nova modalidade:');
-    if(m) {
-        toast('Funcionalidade em desenvolvimento - use o PHPMyAdmin', 'warn');
+async function addModalidade(){
+    try {
+        const nome = prompt('Nova modalidade:');
+        if (!nome || !nome.trim()) return;
+
+        await apiCall('admin.php?action=modalidades', {
+            method: 'POST',
+            body: JSON.stringify({
+                nome: nome.trim()
+            })
+        });
+
+        toast('Modalidade criada com sucesso!', 'ok');
+        await renderModalidades();
+
+    } catch (error) {
+        console.error('Error adding modality:', error);
+        toast('Erro ao criar modalidade', 'err');
+    }
+}
+
+async function delModalidade(id){
+    try {
+        await apiCall(`admin.php?action=modalidades&id=${id}`, {
+            method: 'DELETE'
+        });
+        toast('Modalidade excluída com sucesso!', 'ok');
+        await renderModalidades();
+    } catch (error) {
+        console.error('Error deleting modality:', error);
+        toast('Erro ao excluir modalidade', 'err');
     }
 }
 
@@ -815,13 +902,13 @@ async function renderTurmas(){
         });
         
         tbody.onclick = (e) => {
-            const id = e.target.dataset.edit || e.target.dataset.del; 
+            const id = e.target.dataset.edit || e.target.dataset.del;
             if(!id) return;
-            
+
             if(e.target.dataset.edit) editTurma(id);
             if(e.target.dataset.del) {
                 if(confirm('Excluir turma?')) {
-                    toast('Funcionalidade em desenvolvimento - use o PHPMyAdmin', 'warn');
+                    delTurma(id);
                 }
             }
         };
@@ -832,8 +919,79 @@ async function renderTurmas(){
     }
 }
 
-function editTurma(id = null){
-    toast('Funcionalidade em desenvolvimento - use o PHPMyAdmin', 'warn');
+async function editTurma(id = null){
+    try {
+        let turma = null;
+        if (id) {
+            // Buscar dados da turma para editar
+            const turmas = await apiCall('turmas.php');
+            turma = turmas.find(t => t.id == id);
+            if (!turma) {
+                toast('Turma não encontrada', 'err');
+                return;
+            }
+        }
+
+        // Buscar modalidades para o select
+        const modalidades = await apiCall('admin.php?action=modalidades');
+
+        // Formulário simples para editar turma
+        const modalidade = prompt('Modalidade:', turma ? turma.modalidade : modalidades[0]?.nome || '');
+        if (modalidade === null) return;
+
+        const instrutor = prompt('Instrutor:', turma ? turma.instrutor : '');
+        if (instrutor === null) return;
+
+        const data = prompt('Data (YYYY-MM-DD):', turma ? turma.data : ymd(new Date()));
+        if (data === null) return;
+
+        const inicio = prompt('Horário início (HH:MM):', turma ? turma.inicio : '08:00');
+        if (inicio === null) return;
+
+        const fim = prompt('Horário fim (HH:MM):', turma ? turma.fim : '09:00');
+        if (fim === null) return;
+
+        const vagas = prompt('Vagas:', turma ? turma.vagas : '20');
+        if (vagas === null) return;
+
+        if (turma) {
+            // Atualizar turma existente
+            await apiCall('turmas.php', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    id: id,
+                    modalidade: modalidade.trim(),
+                    instrutor: instrutor.trim(),
+                    data: data.trim(),
+                    inicio: inicio.trim(),
+                    fim: fim.trim(),
+                    vagas: parseInt(vagas)
+                })
+            });
+            toast('Turma atualizada com sucesso!', 'ok');
+        } else {
+            // Criar nova turma
+            await apiCall('turmas.php', {
+                method: 'POST',
+                body: JSON.stringify({
+                    modalidade: modalidade.trim(),
+                    instrutor: instrutor.trim(),
+                    data: data.trim(),
+                    inicio: inicio.trim(),
+                    fim: fim.trim(),
+                    vagas: parseInt(vagas)
+                })
+            });
+            toast('Turma criada com sucesso!', 'ok');
+        }
+
+        // Recarregar lista
+        await renderTurmas();
+
+    } catch (error) {
+        console.error('Error editing class:', error);
+        toast('Erro ao salvar turma', 'err');
+    }
 }
 
 async function renderRelatorios(){
