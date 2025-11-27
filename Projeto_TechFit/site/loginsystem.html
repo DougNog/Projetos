@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechFit – Academia Inteligente</title>
+  <link rel="stylesheet" href="login.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="app-header glass">
+      <div class="brand">
+        <span class="logo-pulse"></span>
+        <h1>TechFit</h1>
+      </div>
+      <nav id="top-nav" class="top-nav">
+        <button class="btn ghost" data-route="home">Início</button>
+        <button class="btn ghost" data-route="agenda">Agendamento</button>
+        <button class="btn ghost" data-route="acesso">Acesso</button>
+        <button class="btn ghost" data-route="comunicacao">Comunicação</button>
+        <button class="btn ghost" data-route="avaliacao">Avaliação Física</button>
+        <button class="btn ghost" data-route="admin">Painel Administrativo</button>
+      </nav>
+      <div class="session-area">
+        <div id="user-chip" class="chip"></div>
+        <button id="btn-logout" class="btn outline small">Sair</button>
+      </div>
+    </header>
+
+    <main id="view" class="view"></main>
+
+    <footer class="app-footer">
+      <p>© <span id="year"></span> TechFit — Plataforma acadêmica com agendamento, acesso via QR, comunicação e avaliação física.</p>
+    </footer>
+  </div>
+
+  <!-- Templates (renderizados via JS) -->
+  <template id="tpl-login">
+    <section class="hero">
+      <div class="hero-card glass">
+        <h2>Bem-vindo à <span class="neon">TechFit</span></h2>
+        <p>Faça login para acessar seu painel.</p>
+        <form id="form-login" class="form-grid">
+          <label>
+            <span>E-mail</span>
+            <input type="email" id="login-email" required placeholder="aluno@techfit.com" />
+          </label>
+          <label>
+            <span>Senha</span>
+            <input type="password" id="login-senha" required placeholder="••••••••" />
+          </label>
+          <div class="inline">
+            <label class="switch">
+              <input type="checkbox" id="login-admin" />
+              <span class="slider"></span>
+            </label>
+            <span>Sou funcionário (admin)</span>
+          </div>
+          <button class="btn primary">Entrar</button>
+        </form>
+        <details class="hint">
+          <summary>Logins de exemplo</summary>
+          <ul>
+            <li><code>aluno@techfit.com</code> / <code>123456</code></li>
+            <li><code>admin@techfit.com</code> / <code>123456</code> (marque "Sou funcionário")</li>
+          </ul>
+        </details>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-home">
+    <section class="grid-2">
+      <div class="card glass">
+        <h3>Minha Semana</h3>
+        <div id="home-minha-semana"></div>
+      </div>
+      <div class="card glass">
+        <h3>Notificações</h3>
+        <ul id="home-notificacoes" class="list"></ul>
+      </div>
+    </section>
+    <section class="grid-3">
+      <div class="card kpi glass"><h4>Frequência</h4><div id="kpi-frequencia" class="kpi-val">—</div></div>
+      <div class="card kpi glass"><h4>Ocupação Média</h4><div id="kpi-ocupacao" class="kpi-val">—</div></div>
+      <div class="card kpi glass"><h4>Mensagens</h4><div id="kpi-msgs" class="kpi-val">—</div></div>
+    </section>
+  </template>
+
+  <template id="tpl-agenda">
+    <section class="toolbar glass">
+      <div class="filters">
+        <select id="filtro-modalidade"></select>
+        <input type="date" id="filtro-data" />
+      </div>
+      <div class="actions">
+        <button id="btn-rel-ocupacao" class="btn outline">Relatório de Ocupação</button>
+        <button id="btn-exportar-ocupacao" class="btn outline">Exportar CSV</button>
+      </div>
+    </section>
+    <section id="lista-aulas" class="cards-grid"></section>
+  </template>
+
+  <template id="tpl-acesso">
+    <section class="grid-2">
+      <div class="card glass">
+        <h3>Meu QR de Acesso</h3>
+        <div id="qr-area" class="qr-area"></div>
+        <button id="btn-gerar-qr" class="btn primary small">Gerar / Atualizar QR</button>
+        <p class="muted">Use este QR nas catracas para registrar entrada/saída (demo).</p>
+      </div>
+      <div class="card glass">
+        <h3>Scanner (Admin)</h3>
+        <video id="cam" class="cam" autoplay muted playsinline></video>
+        <canvas id="cam-canvas" class="hide"></canvas>
+        <div class="inline">
+          <button id="btn-start-scan" class="btn outline small">Iniciar Scanner</button>
+          <button id="btn-stop-scan" class="btn outline small">Parar</button>
+        </div>
+        <div id="scan-status" class="muted">Câmera parada.</div>
+      </div>
+    </section>
+    <section class="card glass">
+      <h3>Histórico de Acesso</h3>
+      <table class="table" id="tabela-acessos">
+        <thead><tr><th>Data/Hora</th><th>Usuário</th><th>Ação</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </template>
+
+  <template id="tpl-comunicacao">
+    <section class="grid-2">
+      <div class="card glass">
+        <h3>Mensagens (Admin)</h3>
+        <form id="form-msg" class="form-grid">
+          <label><span>Título</span><input id="msg-titulo" required></label>
+          <label><span>Conteúdo</span><textarea id="msg-corpo" required rows="4"></textarea></label>
+          <label><span>Segmento por Modalidade</span><select id="msg-modalidade"></select></label>
+          <label><span>Segmento por Frequência (mín. check-ins/mês)</span><input id="msg-frequencia" type="number" min="0" value="0"></label>
+          <button class="btn primary">Enviar</button>
+        </form>
+      </div>
+      <div class="card glass">
+        <h3>Minha Caixa de Entrada</h3>
+        <ul id="lista-mensagens" class="list"></ul>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-avaliacao">
+    <section class="grid-2">
+      <div class="card glass">
+        <h3>Registrar Avaliação</h3>
+        <form id="form-av" class="form-grid">
+          <label><span>Peso (kg)</span><input id="av-peso" type="number" step="0.1" required></label>
+          <label><span>Altura (cm)</span><input id="av-altura" type="number" step="0.1" required></label>
+          <label><span>% Gordura</span><input id="av-gordura" type="number" step="0.1"></label>
+          <label><span>Peito (cm)</span><input id="av-peito" type="number" step="0.1"></label>
+          <label><span>Cintura (cm)</span><input id="av-cintura" type="number" step="0.1"></label>
+          <label><span>Quadril (cm)</span><input id="av-quadril" type="number" step="0.1"></label>
+          <button class="btn primary">Salvar</button>
+        </form>
+      </div>
+      <div class="card glass">
+        <h3>Evolução</h3>
+        <div id="charts" class="charts">
+          <svg id="chart-peso" class="chart" viewBox="0 0 600 240"></svg>
+          <svg id="chart-bmi" class="chart" viewBox="0 0 600 240"></svg>
+        </div>
+      </div>
+    </section>
+    <section class="card glass">
+      <h3>Lembretes & Alertas</h3>
+      <ul id="av-alertas" class="list"></ul>
+    </section>
+  </template>
+
+  <template id="tpl-admin">
+    <section class="tabs glass">
+      <button class="tab active" data-tab="alunos">Alunos</button>
+      <button class="tab" data-tab="modalidades">Modalidades</button>
+      <button class="tab" data-tab="turmas">Turmas</button>
+      <button class="tab" data-tab="relatorios">Relatórios</button>
+    </section>
+    <section id="admin-views">
+      <div class="tab-pane show" id="tab-alunos">
+        <div class="inline justify-between">
+          <h3>Gerenciar Alunos</h3>
+          <button id="add-aluno" class="btn small">+ Novo</button>
+        </div>
+        <table class="table" id="tbl-alunos">
+          <thead><tr><th>Nome</th><th>E-mail</th><th>Modalidade</th><th>Check-ins/mês</th><th>Ações</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="tab-pane" id="tab-modalidades">
+        <div class="inline justify-between">
+          <h3>Modalidades</h3>
+          <button id="add-modalidade" class="btn small">+ Nova</button>
+        </div>
+        <ul id="lista-modalidades" class="chips"></ul>
+      </div>
+
+      <div class="tab-pane" id="tab-turmas">
+        <div class="inline justify-between">
+          <h3>Turmas</h3>
+          <button id="add-turma" class="btn small">+ Nova</button>
+        </div>
+        <table class="table" id="tbl-turmas">
+          <thead><tr><th>Modalidade</th><th>Instrutor</th><th>Data</th><th>Início</th><th>Fim</th><th>Vagas</th><th>Inscritos</th><th>Ações</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="tab-pane" id="tab-relatorios">
+        <div class="grid-2">
+          <div class="card glass">
+            <h4>Ocupação por Turma</h4>
+            <div id="rel-ocupacao"></div>
+          </div>
+          <div class="card glass">
+            <h4>Frequência (Check-ins)</h4>
+            <div id="rel-frequencia"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <div id="toaster" class="toaster"></div>
+
+  <script src="qrcode.min.js"></script>
+  <script src="jsqr.min.js"></script>
+  <script src="login.js"></script>
+</body>
+</html>
