@@ -19,6 +19,7 @@ $router->get('/dashboard', 'AdminController@index');
 $router->get('/agendamentos', 'AgendamentoController@index');
 $router->post('/agendamentos/criar', 'AgendamentoController@store');
 $router->post('/agendamentos/cancelar', 'AgendamentoController@cancelar');
+$router->post('/agendamentos/confirmar', 'AgendamentoController@confirmar');
 $router->get('/agendamentos/relatorio', 'AgendamentoController@relatorioOcupacao');
 $router->get('/agendamentos/notificacoes', 'AgendamentoController@notificacoes');
 

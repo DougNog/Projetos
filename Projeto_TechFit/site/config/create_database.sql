@@ -31,8 +31,13 @@ CREATE TABLE IF NOT EXISTS turmas (
 CREATE TABLE IF NOT EXISTS agendamentos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
-    turma_id INT NOT NULL,
-    status ENUM('confirmado', 'espera') DEFAULT 'confirmado',
+    turma_id INT NULL,
+    data DATE NULL,
+    horario_inicio TIME NULL,
+    horario_fim TIME NULL,
+    modalidade VARCHAR(100) NULL,
+    observacoes TEXT NULL,
+    status ENUM('confirmado', 'espera', 'pendente') DEFAULT 'pendente',
     data_agendamento TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
     FOREIGN KEY (turma_id) REFERENCES turmas(id)

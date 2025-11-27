@@ -31,4 +31,4 @@ try {
     echo "2. Se o banco de dados 'techfit_academia' foi criado\n";
     echo "3. Se as credenciais em config/database.php estão corretas\n";
 }
-
+?>
